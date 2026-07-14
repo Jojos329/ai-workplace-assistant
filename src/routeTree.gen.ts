@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as AppEmailRouteImport } from './routes/_app.email'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -21,24 +22,32 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppEmailRoute = AppEmailRouteImport.update({
+  id: '/email',
+  path: '/email',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/email': typeof AppEmailRoute
 }
 export interface FileRoutesByTo {
+  '/email': typeof AppEmailRoute
   '/': typeof AppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/_app/email': typeof AppEmailRoute
   '/_app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/email'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/_app' | '/_app/'
+  to: '/email' | '/'
+  id: '__root__' | '/_app' | '/_app/email' | '/_app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -61,14 +70,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/email': {
+      id: '/_app/email'
+      path: '/email'
+      fullPath: '/email'
+      preLoaderRoute: typeof AppEmailRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppEmailRoute: typeof AppEmailRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppEmailRoute: AppEmailRoute,
   AppIndexRoute: AppIndexRoute,
 }
 

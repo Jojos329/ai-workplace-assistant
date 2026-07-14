@@ -80,9 +80,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "AI Workplace Productivity Assistant" },
       { name: "description", content: "Automate daily work with AI: emails, meeting summaries, task planning, research, and chat." },
       { property: "og:title", content: "AI Workplace Productivity Assistant" },
-      { property: "og:description", content: "Your AI-powered workspace for professional productivity." },
+      { property: "og:description", content: "Automate daily work with AI: emails, meeting summaries, task planning, research, and chat." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "AI Workplace Productivity Assistant" },
+      { name: "twitter:description", content: "Automate daily work with AI: emails, meeting summaries, task planning, research, and chat." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0ef4d6e6-3a5e-45ac-adc6-0174450faa0c/id-preview-4720a7c8--60edbc5a-66ae-4ac5-a0b0-99e4a34a4de4.lovable.app-1784026485178.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0ef4d6e6-3a5e-45ac-adc6-0174450faa0c/id-preview-4720a7c8--60edbc5a-66ae-4ac5-a0b0-99e4a34a4de4.lovable.app-1784026485178.png" },
     ],
     links: [
       {

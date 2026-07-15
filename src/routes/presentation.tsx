@@ -389,7 +389,7 @@ function TechSlide() {
 function FlowSlide() {
   const steps = [
     { icon: LayoutDashboard, title: "Open the app", desc: "Land on a clean dashboard with all five tools." },
-    { icon: MousePointerClick, title: "Pick a tool", desc: "Choose Email, Meetings, Tasks, Research, or Chat." },
+        { icon: MousePointer, title: "Pick a tool", desc: "Choose Email, Meetings, Tasks, Research, or Chat." },
     { icon: MessageSquare, title: "Ask the AI", desc: "Describe what you need in plain language." },
     { icon: CheckCircle2, title: "Get options", desc: "Review, edit, and use the AI-generated output." },
   ];

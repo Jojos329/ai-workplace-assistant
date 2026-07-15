@@ -284,10 +284,10 @@ function SolutionSlide() {
     <SlideContainer className="flex flex-col justify-center">
       <div className="slide-kicker mb-6 text-primary">The solution</div>
       <h2 className="slide-title max-w-[1100px] font-bold text-foreground">
-        One central dashboard with every AI tool you need.
+        One dashboard. Five AI tools. All in one place.
       </h2>
       <p className="slide-body mt-8 max-w-[950px] text-muted-foreground">
-        A single, unified workspace where professionals can draft emails, summarize meetings, plan tasks, research topics, and chat with AI — all in one place.
+        A single, unified workspace to draft emails, summarize meetings, plan tasks, research topics, and chat with AI.
       </p>
 
       <div className="mt-20 flex items-center justify-center gap-8">
@@ -320,6 +320,9 @@ function FeaturesSlide() {
     <SlideContainer className="flex flex-col justify-center">
       <div className="slide-kicker mb-6 text-primary">Features</div>
       <h2 className="slide-title max-w-[1100px] font-bold text-foreground">Five AI-powered tools for daily work.</h2>
+      <p className="slide-body mt-6 max-w-[950px] text-muted-foreground">
+        Everything you need to move faster, in one place.
+      </p>
 
       <div className="mt-16 grid grid-cols-3 gap-8">
         {features.slice(0, 3).map((f) => (
@@ -424,7 +427,7 @@ function EndingSlide() {
     <SlideContainer className="flex flex-col items-center justify-center text-center">
       <div className="relative">
         <div className="absolute -inset-40 rounded-full bg-primary/10 blur-3xl" />
-        <h2 className="slide-title-lg relative font-bold text-foreground">Thank you.</h2>
+        <h2 className="slide-title-lg relative font-bold text-foreground">Thank You</h2>
       </div>
       <p className="slide-subtitle mt-10 max-w-[900px] text-muted-foreground">
         The AI Workplace Productivity Assistant turns scattered work into one seamless, intelligent experience.

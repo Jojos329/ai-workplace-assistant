@@ -62,7 +62,7 @@ function PresentationPage() {
   }, [currentSlide, navigate]);
 
   useEffect(() => {
-    const handleKeyDown = (e: the keyboard event) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === " " || e.key === "PageDown") {
         e.preventDefault();
         nextSlide();

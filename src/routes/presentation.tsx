@@ -442,7 +442,7 @@ function EndingSlide() {
           <p className="slide-body mt-3 text-muted-foreground">Collaborate with shared AI output.</p>
         </div>
         <div className="glass rounded-3xl p-10 transition-transform duration-300 hover:-translate-y-2 hover:neon-glow">
-          <Plug className="mx-auto h-12 w-12 text-primary" />
+          <Cable className="mx-auto h-12 w-12 text-primary" />
           <h3 className="slide-subtitle mt-6 font-semibold text-foreground">Integrations</h3>
           <p className="slide-body mt-3 text-muted-foreground">Connect calendars, email, and docs.</p>
         </div>

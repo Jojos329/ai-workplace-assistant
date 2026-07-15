@@ -124,3 +124,59 @@
     0 0 24px color-mix(in oklab, #4ADE80 55%, transparent),
     0 0 48px color-mix(in oklab, #4ADE80 25%, transparent);
 }
+
+/* Presentation slide system */
+.slide-wrapper {
+  position: absolute;
+  width: 1920px;
+  height: 1080px;
+  left: 50%;
+  top: 50%;
+  margin-left: -960px;
+  margin-top: -540px;
+  transform: scale(var(--scale, 1));
+  transform-origin: center center;
+}
+
+.slide-content {
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  position: relative;
+
+  --slide-title-lg: 104px;
+  --slide-title:    88px;
+  --slide-subtitle: 52px;
+  --slide-body-lg:  40px;
+  --slide-body:     32px;
+  --slide-caption:  24px;
+  --slide-kicker:   22px;
+  --slide-chrome:   20px;
+}
+
+.slide-title-lg { font-size: var(--slide-title-lg); line-height: 1.0;  letter-spacing: -0.05em; }
+.slide-title    { font-size: var(--slide-title);    line-height: 1.05; letter-spacing: -0.04em; }
+.slide-subtitle { font-size: var(--slide-subtitle); line-height: 1.15; letter-spacing: -0.025em; }
+.slide-body-lg  { font-size: var(--slide-body-lg);  line-height: 1.22; }
+.slide-body     { font-size: var(--slide-body);     line-height: 1.28; }
+.slide-caption  { font-size: var(--slide-caption);  line-height: 1.25; }
+.slide-kicker   { font-size: var(--slide-kicker);   line-height: 1.1;  letter-spacing: 0.12em; text-transform: uppercase; }
+
+.slide-chrome,
+.slide-badge,
+.slide-footer,
+.slide-page     { font-size: var(--slide-chrome); line-height: 1.15; }
+.slide-badge,
+.slide-page     { white-space: nowrap; }
+
+@utility slide-glow {
+  box-shadow: 0 0 80px color-mix(in oklab, #4ADE80 35%, transparent),
+    0 0 160px color-mix(in oklab, #4ADE80 15%, transparent);
+}
+
+@utility slide-grid-bg {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, #4ADE80 6%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, #4ADE80 6%, transparent) 1px, transparent 1px);
+  background-size: 80px 80px;
+}

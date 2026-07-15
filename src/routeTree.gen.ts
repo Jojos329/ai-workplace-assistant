@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PresentationRouteImport } from './routes/presentation'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppTasksRouteImport } from './routes/_app.tasks'
@@ -17,6 +18,11 @@ import { Route as AppNotesRouteImport } from './routes/_app.notes'
 import { Route as AppEmailRouteImport } from './routes/_app.email'
 import { Route as AppChatRouteImport } from './routes/_app.chat'
 
+const PresentationRoute = PresentationRouteImport.update({
+  id: '/presentation',
+  path: '/presentation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
@@ -54,6 +60,7 @@ const AppChatRoute = AppChatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/presentation': typeof PresentationRoute
   '/chat': typeof AppChatRoute
   '/email': typeof AppEmailRoute
   '/notes': typeof AppNotesRoute
@@ -61,6 +68,7 @@ export interface FileRoutesByFullPath {
   '/tasks': typeof AppTasksRoute
 }
 export interface FileRoutesByTo {
+  '/presentation': typeof PresentationRoute
   '/chat': typeof AppChatRoute
   '/email': typeof AppEmailRoute
   '/notes': typeof AppNotesRoute
@@ -71,6 +79,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/presentation': typeof PresentationRoute
   '/_app/chat': typeof AppChatRoute
   '/_app/email': typeof AppEmailRoute
   '/_app/notes': typeof AppNotesRoute
@@ -80,12 +89,27 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/chat' | '/email' | '/notes' | '/research' | '/tasks'
+  fullPaths:
+    | '/'
+    | '/presentation'
+    | '/chat'
+    | '/email'
+    | '/notes'
+    | '/research'
+    | '/tasks'
   fileRoutesByTo: FileRoutesByTo
-  to: '/chat' | '/email' | '/notes' | '/research' | '/tasks' | '/'
+  to:
+    | '/presentation'
+    | '/chat'
+    | '/email'
+    | '/notes'
+    | '/research'
+    | '/tasks'
+    | '/'
   id:
     | '__root__'
     | '/_app'
+    | '/presentation'
     | '/_app/chat'
     | '/_app/email'
     | '/_app/notes'
@@ -96,10 +120,18 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  PresentationRoute: typeof PresentationRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/presentation': {
+      id: '/presentation'
+      path: '/presentation'
+      fullPath: '/presentation'
+      preLoaderRoute: typeof PresentationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app': {
       id: '/_app'
       path: ''
@@ -174,7 +206,18 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  PresentationRoute: PresentationRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

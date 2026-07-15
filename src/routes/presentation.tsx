@@ -21,6 +21,9 @@ import {
   MessageSquare,
   Globe,
   ChevronRight,
+  MousePointer,
+  User,
+  Cable,
 } from "lucide-react";
 import { z } from "zod";
 

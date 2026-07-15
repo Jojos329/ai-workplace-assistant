@@ -437,7 +437,7 @@ function EndingSlide() {
           <p className="slide-body mt-3 text-muted-foreground">Take the assistant anywhere.</p>
         </div>
         <div className="glass rounded-3xl p-10 transition-transform duration-300 hover:-translate-y-2 hover:neon-glow">
-          <Users className="mx-auto h-12 w-12 text-primary" />
+          <User className="mx-auto h-12 w-12 text-primary" />
           <h3 className="slide-subtitle mt-6 font-semibold text-foreground">Team workspaces</h3>
           <p className="slide-body mt-3 text-muted-foreground">Collaborate with shared AI output.</p>
         </div>

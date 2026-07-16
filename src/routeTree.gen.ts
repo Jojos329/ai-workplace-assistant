@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as PresentationRouteImport } from './routes/presentation'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AppTasksRouteImport } from './routes/_app.tasks'
 import { Route as AppResearchRouteImport } from './routes/_app.research'
 import { Route as AppNotesRouteImport } from './routes/_app.notes'
@@ -31,6 +32,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const ApiChatRoute = ApiChatRouteImport.update({
+  id: '/api/chat',
+  path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppTasksRoute = AppTasksRouteImport.update({
   id: '/tasks',
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/notes': typeof AppNotesRoute
   '/research': typeof AppResearchRoute
   '/tasks': typeof AppTasksRoute
+  '/api/chat': typeof ApiChatRoute
 }
 export interface FileRoutesByTo {
   '/presentation': typeof PresentationRoute
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/notes': typeof AppNotesRoute
   '/research': typeof AppResearchRoute
   '/tasks': typeof AppTasksRoute
+  '/api/chat': typeof ApiChatRoute
   '/': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/_app/notes': typeof AppNotesRoute
   '/_app/research': typeof AppResearchRoute
   '/_app/tasks': typeof AppTasksRoute
+  '/api/chat': typeof ApiChatRoute
   '/_app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/notes'
     | '/research'
     | '/tasks'
+    | '/api/chat'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/presentation'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
     | '/notes'
     | '/research'
     | '/tasks'
+    | '/api/chat'
     | '/'
   id:
     | '__root__'
@@ -115,12 +126,14 @@ export interface FileRouteTypes {
     | '/_app/notes'
     | '/_app/research'
     | '/_app/tasks'
+    | '/api/chat'
     | '/_app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   PresentationRoute: typeof PresentationRoute
+  ApiChatRoute: typeof ApiChatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -145,6 +158,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/api/chat': {
+      id: '/api/chat'
+      path: '/api/chat'
+      fullPath: '/api/chat'
+      preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/tasks': {
       id: '/_app/tasks'
@@ -207,17 +227,8 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   PresentationRoute: PresentationRoute,
+  ApiChatRoute: ApiChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

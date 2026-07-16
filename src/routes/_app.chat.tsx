@@ -1,15 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { MessagesSquare, Plus, Trash2, Send, User, Bot } from "lucide-react";
+import { MessagesSquare, Plus, Trash2, Send, User, Bot, Square } from "lucide-react";
 import { toast } from "sonner";
-import { chatCompletion } from "@/lib/ai.functions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type Msg = { role: "user" | "assistant"; content: string; followups?: string[] };
 type Thread = { id: string; title: string; updatedAt: number; messages: Msg[] };
 
 const KEY = "wpai:chat:threads";
@@ -118,9 +116,10 @@ function ChatPage() {
 }
 
 function ChatWindow({ thread, onUpdate }: { thread: Thread; onUpdate: (u: (t: Thread) => Thread) => void }) {
-  const call = useServerFn(chatCompletion);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -130,10 +129,21 @@ function ChatWindow({ thread, onUpdate }: { thread: Thread; onUpdate: (u: (t: Th
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [thread.messages, loading]);
+  }, [thread.messages, loading, streaming]);
 
-  async function send() {
-    const text = input.trim();
+  function parseFollowups(raw: string): { content: string; followups: string[] } {
+    const m = raw.match(/FOLLOWUPS:\s*(\[[\s\S]*?\])\s*$/);
+    if (!m) return { content: raw.trim(), followups: [] };
+    let followups: string[] = [];
+    try {
+      const parsed = JSON.parse(m[1]);
+      if (Array.isArray(parsed)) followups = parsed.filter((x) => typeof x === "string").slice(0, 3);
+    } catch { /* ignore */ }
+    return { content: raw.slice(0, m.index).trim(), followups };
+  }
+
+  async function send(override?: string) {
+    const text = (override ?? input).trim();
     if (!text || loading) return;
     const userMsg: Msg = { role: "user", content: text };
     const nextMsgs = [...thread.messages, userMsg];
@@ -145,16 +155,58 @@ function ChatWindow({ thread, onUpdate }: { thread: Thread; onUpdate: (u: (t: Th
     }));
     setInput("");
     setLoading(true);
+    setStreaming("");
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
-      const res = await call({ data: { messages: nextMsgs } });
-      const assistant: Msg = { role: "assistant", content: res.reply };
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: nextMsgs.map((m) => ({ role: m.role, content: m.content })),
+        }),
+        signal: controller.signal,
+      });
+      if (!res.ok || !res.body) {
+        const errText = await res.text().catch(() => "Chat failed.");
+        throw new Error(errText || "Chat failed.");
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let acc = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        acc += decoder.decode(value, { stream: true });
+        // hide the FOLLOWUPS tail while streaming
+        const cutIdx = acc.indexOf("FOLLOWUPS:");
+        setStreaming(cutIdx >= 0 ? acc.slice(0, cutIdx).trimEnd() : acc);
+      }
+      const { content, followups } = parseFollowups(acc);
+      const assistant: Msg = { role: "assistant", content, followups };
       onUpdate((t) => ({ ...t, messages: [...t.messages, assistant], updatedAt: Date.now() }));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Chat failed.");
+      if ((err as Error)?.name === "AbortError") {
+        const partial = (abortRef.current as unknown as { _partial?: string })?._partial;
+        const acc = partial ?? "";
+        const { content, followups } = parseFollowups(acc);
+        if (content) {
+          const assistant: Msg = { role: "assistant", content: content + "\n\n_Stopped._", followups };
+          onUpdate((t) => ({ ...t, messages: [...t.messages, assistant], updatedAt: Date.now() }));
+        }
+      } else {
+        toast.error(err instanceof Error ? err.message : "Chat failed.");
+      }
     } finally {
+      setStreaming("");
       setLoading(false);
+      abortRef.current = null;
       setTimeout(() => inputRef.current?.focus(), 0);
     }
+  }
+
+  function stop() {
+    abortRef.current?.abort();
   }
 
   function onKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -163,6 +215,9 @@ function ChatWindow({ thread, onUpdate }: { thread: Thread; onUpdate: (u: (t: Th
       send();
     }
   }
+
+  const lastAssistant = [...thread.messages].reverse().find((m) => m.role === "assistant");
+  const followups = !loading && lastAssistant?.followups?.length ? lastAssistant.followups : [];
 
   return (
     <div className="flex flex-1 flex-col rounded-xl border bg-card">
@@ -188,7 +243,10 @@ function ChatWindow({ thread, onUpdate }: { thread: Thread; onUpdate: (u: (t: Th
           {thread.messages.map((m, i) => (
             <MessageBubble key={i} msg={m} />
           ))}
-          {loading && (
+          {loading && streaming && (
+            <MessageBubble msg={{ role: "assistant", content: streaming }} />
+          )}
+          {loading && !streaming && (
             <div className="flex items-start gap-3">
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Bot className="h-4 w-4" />
@@ -198,6 +256,20 @@ function ChatWindow({ thread, onUpdate }: { thread: Thread; onUpdate: (u: (t: Th
                 <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
                 <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" />
               </div>
+            </div>
+          )}
+          {followups.length > 0 && (
+            <div className="flex flex-wrap gap-2 pl-11">
+              {followups.map((q, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => send(q)}
+                  className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs text-primary transition hover:bg-primary/20 hover:shadow-[0_0_12px_hsl(var(--primary)/0.5)]"
+                >
+                  {q}
+                </button>
+              ))}
             </div>
           )}
           <div ref={bottomRef} />
@@ -215,9 +287,15 @@ function ChatWindow({ thread, onUpdate }: { thread: Thread; onUpdate: (u: (t: Th
             placeholder="Message your assistant..."
             className="min-h-[36px] resize-none border-0 bg-transparent p-1 shadow-none focus-visible:ring-0"
           />
-          <Button size="icon" onClick={send} disabled={loading || !input.trim()} aria-label="Send">
-            <Send className="h-4 w-4" />
-          </Button>
+          {loading ? (
+            <Button size="icon" variant="destructive" onClick={stop} aria-label="Stop generating">
+              <Square className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button size="icon" onClick={() => send()} disabled={!input.trim()} aria-label="Send">
+              <Send className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         <p className="mt-2 text-center text-[11px] text-muted-foreground">
           AI-generated content may require human review.

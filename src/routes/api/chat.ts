@@ -34,6 +34,8 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("Invalid JSON", { status: 400 });
         }
         const messages = body.messages ?? [];
+        const last = messages[messages.length - 1];
+        const isDeepDive = last?.role === "user" && /^\s*deep dive\s*$/i.test(last.content);
 
         const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -44,7 +46,7 @@ export const Route = createFileRoute("/api/chat")({
           body: JSON.stringify({
             model: "google/gemini-3-flash-preview",
             messages: [{ role: "system", content: SYSTEM }, ...messages],
-            max_tokens: 200,
+            max_tokens: isDeepDive ? 700 : 200,
             temperature: 0.6,
             stream: true,
           }),

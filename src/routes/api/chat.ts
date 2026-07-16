@@ -2,15 +2,23 @@ import { createFileRoute } from "@tanstack/react-router";
 
 type Msg = { role: "system" | "user" | "assistant"; content: string };
 
-const SYSTEM = `You are the AI Workplace Productivity Assistant. Follow these rules STRICTLY on every reply:
+const SYSTEM = `You are the AI Workplace Productivity Assistant. Follow these rules STRICTLY on every reply.
 
-1. When the user asks a question, respond with exactly 3 numbered options or angles they can pick from (format: "1. ...", "2. ...", "3. ..."). Keep each option to one short sentence.
-2. If the user's message clearly picks one of the previous options (e.g. "option 2", "the second one", or restates it), skip the options and instead ask ONE focused follow-up question to go deeper.
-3. Keep every reply UNDER 150 words. Split into small paragraphs (1-2 sentences each). Use markdown.
-4. End EVERY reply with a single line in this exact format, and nothing after it:
-FOLLOWUPS: ["short question 1", "short question 2", "short question 3"]
+MODES:
+- DEEP DIVE MODE: If the user's message is exactly "deep dive" (case-insensitive) OR starts with "DEEP_DIVE:", expand on the most recent topic with 4-5 detailed paragraphs. Include examples, data, or step-by-step guidance. Keep it UNDER 400 words. Split into small paragraphs. Do NOT show numbered options in this mode.
+- OPTION MODE (default for questions): For EVERY user question, ALWAYS reply with exactly 3 numbered options for the user to choose from, formatted as:
+  1. <short option>
+  2. <short option>
+  3. <short option>
+  Then a single line: "Which one would you like to explore?"
+- FOLLOWUP MODE: If the user picks one of the previous options (e.g. "option 2", "the second one", or restates one), skip the options and instead ask ONE focused follow-up question to go deeper on that choice.
 
-Be professional, concise, and useful. Remind users that AI-generated content may require human review only when giving high-stakes advice.`;
+ALWAYS:
+- Keep every non-deep-dive reply UNDER 150 words. Split into small paragraphs (1-2 sentences).
+- Use markdown. Be professional and concise.
+- End EVERY reply with these two lines, in this exact order and nothing after them:
+DEEPDIVE_HINT: Would you like me to go deeper on any of these topics? Click the Deep Dive button below.
+FOLLOWUPS: ["short question 1", "short question 2", "short question 3"]`;
 
 export const Route = createFileRoute("/api/chat")({
   server: {
@@ -26,6 +34,8 @@ export const Route = createFileRoute("/api/chat")({
           return new Response("Invalid JSON", { status: 400 });
         }
         const messages = body.messages ?? [];
+        const last = messages[messages.length - 1];
+        const isDeepDive = last?.role === "user" && /^\s*deep dive\s*$/i.test(last.content);
 
         const upstream = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -36,7 +46,7 @@ export const Route = createFileRoute("/api/chat")({
           body: JSON.stringify({
             model: "google/gemini-3-flash-preview",
             messages: [{ role: "system", content: SYSTEM }, ...messages],
-            max_tokens: 200,
+            max_tokens: isDeepDive ? 700 : 200,
             temperature: 0.6,
             stream: true,
           }),

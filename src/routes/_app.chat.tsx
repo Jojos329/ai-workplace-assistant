@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { MessagesSquare, Plus, Trash2, Send, User, Bot, Square } from "lucide-react";
+import { MessagesSquare, Plus, Trash2, Send, User, Bot, Square, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -133,18 +133,23 @@ function ChatWindow({ thread, onUpdate }: { thread: Thread; onUpdate: (u: (t: Th
   }, [thread.messages, loading, streaming]);
 
   function parseFollowups(raw: string): { content: string; followups: string[] } {
-    const m = raw.match(/FOLLOWUPS:\s*(\[[\s\S]*?\])\s*$/);
-    if (!m) return { content: raw.trim(), followups: [] };
+    let text = raw;
     let followups: string[] = [];
-    try {
-      const parsed = JSON.parse(m[1]);
-      if (Array.isArray(parsed)) followups = parsed.filter((x) => typeof x === "string").slice(0, 3);
-    } catch { /* ignore */ }
-    return { content: raw.slice(0, m.index).trim(), followups };
+    const fm = text.match(/FOLLOWUPS:\s*(\[[\s\S]*?\])\s*$/);
+    if (fm) {
+      try {
+        const parsed = JSON.parse(fm[1]);
+        if (Array.isArray(parsed)) followups = parsed.filter((x) => typeof x === "string").slice(0, 3);
+      } catch { /* ignore */ }
+      text = text.slice(0, fm.index);
+    }
+    text = text.replace(/DEEPDIVE_HINT:.*$/gm, "").trimEnd();
+    return { content: text.trim(), followups };
   }
 
-  async function send(override?: string) {
-    const text = (override ?? input).trim();
+  async function send(override?: string, opts?: { deepDive?: boolean }) {
+    const rawText = (override ?? input).trim();
+    const text = opts?.deepDive ? "deep dive" : rawText;
     if (!text || loading) return;
     const userMsg: Msg = { role: "user", content: text };
     const nextMsgs = [...thread.messages, userMsg];
@@ -183,7 +188,10 @@ function ChatWindow({ thread, onUpdate }: { thread: Thread; onUpdate: (u: (t: Th
         accRef.current = acc;
         // hide the FOLLOWUPS tail while streaming
         const cutIdx = acc.indexOf("FOLLOWUPS:");
-        setStreaming(cutIdx >= 0 ? acc.slice(0, cutIdx).trimEnd() : acc);
+        const dhIdx = acc.indexOf("DEEPDIVE_HINT:");
+        const cuts = [cutIdx, dhIdx].filter((n) => n >= 0);
+        const minCut = cuts.length ? Math.min(...cuts) : -1;
+        setStreaming(minCut >= 0 ? acc.slice(0, minCut).trimEnd() : acc);
       }
       const { content, followups } = parseFollowups(acc);
       const assistant: Msg = { role: "assistant", content, followups };
@@ -219,6 +227,7 @@ function ChatWindow({ thread, onUpdate }: { thread: Thread; onUpdate: (u: (t: Th
 
   const lastAssistant = [...thread.messages].reverse().find((m) => m.role === "assistant");
   const followups = !loading && lastAssistant?.followups?.length ? lastAssistant.followups : [];
+  const showDeepDive = !loading && !!lastAssistant;
 
   return (
     <div className="flex flex-1 flex-col rounded-xl border bg-card">
@@ -271,6 +280,22 @@ function ChatWindow({ thread, onUpdate }: { thread: Thread; onUpdate: (u: (t: Th
                   {q}
                 </button>
               ))}
+            </div>
+          )}
+          {showDeepDive && (
+            <div className="pl-11">
+              <p className="mb-2 text-xs text-muted-foreground">
+                Would you like me to go deeper on any of these topics? Click the Deep Dive button below.
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => send(undefined, { deepDive: true })}
+                className="border-primary/50 text-primary hover:bg-primary/10"
+              >
+                <Search className="mr-1.5 h-3.5 w-3.5" /> Deep Dive
+              </Button>
             </div>
           )}
           <div ref={bottomRef} />

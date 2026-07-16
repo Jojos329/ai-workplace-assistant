@@ -120,6 +120,7 @@ function ChatWindow({ thread, onUpdate }: { thread: Thread; onUpdate: (u: (t: Th
   const [loading, setLoading] = useState(false);
   const [streaming, setStreaming] = useState("");
   const abortRef = useRef<AbortController | null>(null);
+  const accRef = useRef<string>("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -156,6 +157,7 @@ function ChatWindow({ thread, onUpdate }: { thread: Thread; onUpdate: (u: (t: Th
     setInput("");
     setLoading(true);
     setStreaming("");
+    accRef.current = "";
     const controller = new AbortController();
     abortRef.current = controller;
     try {
@@ -178,6 +180,7 @@ function ChatWindow({ thread, onUpdate }: { thread: Thread; onUpdate: (u: (t: Th
         const { done, value } = await reader.read();
         if (done) break;
         acc += decoder.decode(value, { stream: true });
+        accRef.current = acc;
         // hide the FOLLOWUPS tail while streaming
         const cutIdx = acc.indexOf("FOLLOWUPS:");
         setStreaming(cutIdx >= 0 ? acc.slice(0, cutIdx).trimEnd() : acc);
@@ -187,9 +190,7 @@ function ChatWindow({ thread, onUpdate }: { thread: Thread; onUpdate: (u: (t: Th
       onUpdate((t) => ({ ...t, messages: [...t.messages, assistant], updatedAt: Date.now() }));
     } catch (err) {
       if ((err as Error)?.name === "AbortError") {
-        const partial = (abortRef.current as unknown as { _partial?: string })?._partial;
-        const acc = partial ?? "";
-        const { content, followups } = parseFollowups(acc);
+        const { content, followups } = parseFollowups(accRef.current);
         if (content) {
           const assistant: Msg = { role: "assistant", content: content + "\n\n_Stopped._", followups };
           onUpdate((t) => ({ ...t, messages: [...t.messages, assistant], updatedAt: Date.now() }));
